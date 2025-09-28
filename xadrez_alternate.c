@@ -1,306 +1,360 @@
 #include <stdio.h>
-#include <string.h>
 
-int main (){
+/*
+Xadrez Interativo com Loops, recursividade e condicionais.
 
+O código foi dividido em funções modulares para um melhor aproveitamento e menos repetição de código.
 
-    // 1. Declaração de Variáveis
-    
-    int mover_peca; // Variável de Escolha
+O Jogo simula o movimento das peças: Torre, Rainha, Bispo e Cavalo.
 
-    // Variáveis de modo para torre
-    int escolha_torre;
-    char lado_torre[50];
-    int casas_torre;
-    // Variáveis de modo para bispo
-    int escolha_bispo;
-    char lado_bispo[50];
-    int casas_bispo;
-    // Variáveis de modo para rainha
-    int escolha_rainha;
-    char lado_rainha[50];
-    int casas_rainha;
-    // Variáveis de modo para Cavalo
-    int cavalo_vertical;
-    int cavalo_horizontal;
-    char lado_cavalo_vertical[50];
-    char lado_cavalo_horizontal[50];
-    
+Foi implementado lógica para deixar o jogo dinâmico e interativo.
+
+Modularização:
+
+1. Função que define as 4 posições primitivas (Cima, Baixo, Direita e Esquerda).
+2. Função e Obtenção e Validação de Direções Vertical (Cima e Baixo) e Horizontal (Esquerda e Direita).
+3. Função de Obtenção e Validação da quantidade de Casas (< 8).
+4. Função que Define a Peça ser movida.
+5. Funções de Escolha de Movimento (Vertical, Horizontal ou Diagonal)
+6. Funções que movem em si as peças.
+*/
+
+//1.  Define e direção com base no lado como parametro
+const char* definirDirecao(int lado){
+        
+    switch (lado)
+    {
+    case 1:
+        return "Cima";
+    case 2:
+        return "Baixo";
+    case 3:
+        return "Esquerda";
+    case 4:
+        return "Direita";
+    }
+}
+
+// 2. Obtem e Valida as entradas Verticais
+int validarVertical(){
+    int vertical;
+    do
+    {
+        printf("\n\nDigite a direção vertical (1 = Cima, 2 = Baixo): ");
+        scanf("%d", &vertical);
+
+        // Assegura que a entrada será especificamente 1 ou 2
+        if (vertical !=1 && vertical !=2)
+        {
+            printf("\nDireção Inválida! Escolha (1) para Cima ou (2) para Baixo!\n"); 
+        }
+        
+    } while (vertical != 1 && vertical != 2);
+    return vertical;    
+}
+
+// 3. Obtem e Valida as entradas Horizontais
+int validarHorizontal(){
+    int horizontal;
+    do
+    {
+        printf("\n\nDigite a direção horizontal (3 = Esquerda, 4 = Direita): ");
+        scanf("%d", &horizontal);
+
+        if (horizontal != 3 &&  horizontal != 4)
+        {
+            printf("\nDireção Inválida! Escolha (3) para Esquerda ou (4) para Direita!\n"); 
+        }
+        
+    } while (horizontal != 3 && horizontal != 4);
+    return horizontal;    
+}
+
+// 4. Obtem e valida a quantidade de casas que as peças iram percorrer
+int validarCasas(){
+    int casas;
 
     do
     {
-        
-        // 1.1. Boas Vindas e Exibição do Menu para escolha da peça a ser movida
-        printf("\n\n*** Seja Bem-Vindo ao Xadrez interativo da MateCheck! ***\n\n");
+        printf("\n\nDigite quantas casas a peça irá se mover (1 a 8): ");
+        scanf("%d", &casas);
 
-         
-        printf("\n\n*** MENU DE PEÇAS DE XADREZ ***\n\n");
+        // Assegura que só serão digitadas até 8 casas (que é o limite do tabuleiro de xadrez)
+        if (casas < 1 || casas > 8)
+        {
+            printf("\nQuantidade Inválida! Escolha um número de 1 a 8 Casas!\n"); 
+        }
 
-        printf("Por favor, escolha uma peça para mover:\n\n");
+    } while (casas < 1 || casas > 8);  
+    return casas;
+}
+
+// 5. Exibe um menu interativo de peças para que o usuário escolha
+int definirPeca(){
+    int peca;
+
+    do
+    {
+        printf("\nPor favor, escolha uma peça para mover:\n\n");
 
         printf("1. Torre (Movimento horizontal/vertical)\n");
         printf("2. Bispo (Movimento diagonal)\n");
         printf("3. Rainha (Movimento em todas as direcoes)\n");
         printf("4. Cavalo (Movimento em L)\n");
-        printf("5. Sair\n\n");
+    
 
         // Solicita a opção que representa a peça a ser movida
         printf("Digite o número que representa sua escolha: ");
-        scanf("%d", &mover_peca);
+        scanf("%d", &peca);
 
-        // 2. Uso de Switch Condicional para cada Opção
-        switch (mover_peca)
+        // Garante que as entradas obeceçam aos padrões
+        if (peca < 1 || peca > 4)
         {
-        case 1: // Torre
-            
-            // 2.1. Exibição do Menu exibindo todos os possíveis lados da torre
-            printf("Por favor, escolha um lado para mover a torre:\n\n");
+            printf("\nOpção Inválida! Escolha : \n");
+            printf("(1) para Torre, (2) para Bispo, (3) para Rainha ou (4) para Cavalo!\n"); 
+        }
 
-            printf("1. Cima\n");
-            printf("2. Baixo\n");
-            printf("3. Esquerda\n");
-            printf("4. Direita\n\n");
+    } while (peca < 1 || peca > 4);
+    return peca;
+}
 
-            printf("\nDigite o número que representa o lado para sua torre se mover: ");
-            scanf("%d", &escolha_torre);
+/*
+Como no xadrez temos 3 possíveis movimentos: Vertical (cima ou baixo), Horizontal (Esquerda ou Direita) e Diagonal
+Temos 3 funções 1 para cada aspecto: 1 para os movimentos retos (vertical e horizontal), 
+outra para os movimentos diagonais e uma ultima para lidar com a rainha.
+*/
+int escolherMovimentoReto(){
+    int movimento;
+    do
+        {
+            printf("\n\nDigite qual direção a peça irá se mover (1 = vertical ou 2 = horizontal): ");
+            scanf("%d", &movimento);
 
-            // Lógica para transformar a opção digitada no lado literal (Ex.: Cima)
-
-            if (escolha_torre == 1) // Se escolha_torre for 1, então lado_torre será "cima"
+            if (movimento != 1 && movimento != 2)
             {
-                strcpy(lado_torre, "Cima");
-
-            } else if (escolha_torre == 2)
-            {
-                strcpy(lado_torre, "Baixo");
-
-            } else if (escolha_torre == 3)
-            {
-                strcpy(lado_torre, "Esquerda");
-            } else if (escolha_torre == 4)
-            {
-                strcpy(lado_torre, "Direita");
-            } else
-            {
-                strcpy(lado_torre, "Posição inválida!");
-            }       
-            
-            // Solicita ao usuário quantas casas a peça será movida
-            printf("\nAgora, digite a quantidade de casas que a torre irá se mover: ");
-            scanf("%d", &casas_torre);
-            
-            // 2.3. Loop For para exibir o lado e as casas de acordo com o número de casas digitadas
-            for (int i = 1; i <= casas_torre; i++)
-            {
-                printf("Movendo %d casas para %s\n", i, lado_torre);
+                printf("\nDireção Inválida! Escolha (1) para Vertical ou (2) para Horizontal!\n"); 
             }
-            break;
+        } while (movimento != 1 && movimento != 2);
+        return movimento;
+}
 
-        case 2: // Bispo
-            
-            printf("Por favor, escolha um lado para mover o Bispo:\n\n");
 
-            printf("1. Diagonal Superior Esquerda\n");
-            printf("2. Diagonal Superior Direita\n");
-            printf("3. Diagonal Inferior Esquerda\n");
-            printf("4. Diagonal Inferior Direita\n\n");
+int escolherMovimentoDiagonal(){
+    int movimento;
+    return 3;
+}
 
-            printf("\nDigite o número que representa o lado para sua torre se mover: ");
-            scanf("%d", &escolha_bispo);
+int escolherMovimentoRainha(){
+    int movimento;
+    
+    do
+        {
+            printf("\n\nDigite qual direção a Rainha irá se mover (1 = vertical, 2 = horizontal ou 3 = Diagonal): ");
+            scanf("%d", &movimento);
 
-            if (escolha_bispo == 1)
+            if (movimento < 1 || movimento > 3)
             {
-                strcpy(lado_bispo, "Diagonal Superior Esquerda");
-
-            } else if (escolha_bispo == 2)
-            {
-                strcpy(lado_bispo, "Diagonal Superior Direita");
-
-            } else if (escolha_bispo == 3)
-            {
-                strcpy(lado_bispo, "Diagonal Inferior Esquerda");
-            } else if (escolha_bispo == 4)
-            {
-                strcpy(lado_bispo, "Diagonal Inferior Direita");
-            } else
-            {
-                strcpy(lado_bispo, "Posição inválida!");
-            }       
-            
-            printf("\nAgora, digite a quantidade de casas que seu bispo irá se mover: ");
-            scanf("%d", &casas_bispo);          
-
-            
-            // Inicializa a variável de controle i com 1
-            int i = 1;
-
-
-            // Enquanto i for menor que o número de casas digitadas pelo usuário
-            // Será impresso o mesmo número de mensagens 
-            while (i <= casas_bispo) 
-            {
-                printf("Movendo %d casas para %s\n", i, lado_bispo);
-                i++;
-            }            
-
-            break;
-        case 3: // Rainha
-
-            int i_rainha = 1;
-            
-            printf("Por favor, escolha um lado para mover a rainha:\n\n");
-
-            printf("1. Cima\n");
-            printf("2. Baixo\n");
-            printf("3. Esquerda\n");
-            printf("4. Direita\n");
-            printf("5. Diagonal Superior Esquerda\n");
-            printf("6. Diagonal Superior Direita\n");
-            printf("7. Diagonal Inferior Esquerda\n");
-            printf("8. Diagonal Inferior Direita\n\n");
-
-
-            printf("\nDigite o número que representa para qual lado você irá movimentar sua Rainha: ");
-            scanf("%d", &escolha_rainha);
-
-            if (escolha_rainha == 1)
-            {
-                strcpy(lado_rainha, "Cima");
-
-            } else if (escolha_rainha == 2)
-            {
-                strcpy(lado_rainha, "Baixo");
-
-            } else if (escolha_rainha == 3)
-            {
-                strcpy(lado_rainha, "Esquerda");
-            } else if (escolha_rainha == 4)
-            {
-                strcpy(lado_rainha, "Direita");
-            } else if (escolha_rainha == 5)
-            {
-                strcpy(lado_rainha, "Diagonal Superior Esquerda");
-
-            } else if (escolha_rainha == 6)
-            {
-                strcpy(lado_rainha, "Diagonal Superior Direita");
-
-            } else if (escolha_rainha == 7)
-            {
-                strcpy(lado_rainha, "Diagonal Inferior Esquerda");
-            } else if (escolha_rainha == 8)
-            {
-                strcpy(lado_rainha, "Diagonal Inferior Direita");
-            } else
-            {
-                strcpy(lado_rainha, "Posição inválida!");
+                printf("\nDireção Inválida! Escolha (1) para Vertical, (2) para Horizontal ou (3) para Diagonal!\n"); 
             }
+        } while (movimento < 1 || movimento > 3);
+        return movimento;
+}
 
-            printf("\nDigite a quantidade de casas que a Rainha irá se mover: ");
-            scanf("%d", &casas_rainha);
+// Inicio das Funções de movimento
+void moverBispo(int casas, int vertical, int horizontal){
+    
+    for (int linha = 1; linha <= casas; linha++)
+    {
+        for (int coluna = 1; coluna <= casas; coluna++)
+        {
+           if (linha == coluna)
+           {
+                printf("%s e %s\n", definirDirecao(vertical), definirDirecao(horizontal));
+           }      
+        }
+    }
+}
 
-            
+void moverTorre(int casas, int lado){
+    
+    if (casas > 0)
+        {
+            const char* direcao = definirDirecao(lado);
+            printf("%s\n", direcao);
+            moverTorre(casas -1, lado); 
+        }  
+}
 
-            do // Loop Do-While garantindo a primeira exibição
+void moverRainhaReto(int casas, int lado){
+    
+    if (casas > 0)
+        {
+            const char* direcao = definirDirecao(lado);
+            printf("%s\n", direcao);
+            moverRainhaReto(casas -1, lado); 
+        }
+}
+
+void moverRainhaDiagonal(int casas, int vertical, int horizontal){
+    
+    for (int linha = 1; linha <= casas; linha++)
+    {
+        for (int coluna = 1; coluna <= casas; coluna++)
+        {
+           if (linha == coluna)
+           {
+                printf("%s e %s\n", definirDirecao(vertical), definirDirecao(horizontal));
+           }      
+        }
+    }
+}
+
+void moverCavalo(int tipo_movimento, int lado_v, int lado_h){
+    
+
+    if (tipo_movimento == 1 )
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            printf("%s\n", definirDirecao(lado_v));
+        }              
+            printf("%s\n", definirDirecao(lado_h));
+    } else
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            printf("%s\n", definirDirecao(lado_h));
+        }              
+            printf("%s\n", definirDirecao(lado_v));
+    } 
+   
+}
+
+int main(){
+
+    int opcao;
+    int peca;
+    
+    
+
+    do
+    {
+        printf("\n\n*** Seja Bem-Vindo ao Xadrez interativo da MateCheck! ***\n\n");
+
+        printf("*** MENU PRINCIPAL ***\n\n");
+        printf("1. Escolher Peça\n");
+        printf("2. Sair\n");
+
+        printf("\nDigite o número que representa sua escolha: ");
+        scanf("%d", &opcao);
+
+        switch (opcao)
+        {
+        case 1:
+            peca = definirPeca();
+
+            switch (peca)
             {
-                printf("Movendo %d casas para %s\n", i_rainha, lado_rainha);
-                i_rainha++;
-            } while (i_rainha <= casas_rainha); // Repetindo até que a variável de controle for menor ou igual as casas
-            
-
-            break;
-        case 4: // Cavalo
-            
-            printf("Por favor, escolha o lado vertical para mover o Cavalo:\n\n");
-
-            printf("1. Cima\n");
-            printf("2. Baixo\n");
-
-            printf("\nDigite o número que representa o lado para sua cavalo se mover: ");
-            scanf("%d", &cavalo_vertical);
-
-
-            printf("\nAgora, escolha o lado Horizontal para mover o Cavalo:\n\n");
-
-            printf("1. Esquerda\n");
-            printf("2. Direita\n\n");
-
-            printf("\nDigite o número que representa o lado para sua cavalo se mover: ");
-            scanf("%d", &cavalo_horizontal);
-
-            // Lógica para transformar a opção digitada no lado literal (Ex.: Cima)
-
-            if (cavalo_vertical == 1) // 
-            {
-                strcpy(lado_cavalo_vertical, "Cima");
-
-            } else if (cavalo_vertical == 2)
-            {
-                strcpy(lado_cavalo_vertical, "Baixo");
-
-            } else {
-                strcpy(lado_cavalo_vertical, "Posição inválida!");
-            }
-
-            if (cavalo_horizontal == 1)
-            {
-                strcpy(lado_cavalo_horizontal, "Esquerda");
-            } else if (cavalo_horizontal == 2)
-            {
-                strcpy(lado_cavalo_horizontal, "Direita");
-            } else
-            {
-                strcpy(lado_cavalo_horizontal, "Posição inválida!");
-            }       
-            
-            int movimento_completo = 1;
-
-            if (strcmp(lado_cavalo_vertical, "Cima") == 0)
-            {
-                while (movimento_completo--)
-                {
-                    for (int i = 0; i < 2; i++)
-                    {
-                       printf("%s\n", lado_cavalo_vertical);
-                    }
-                    
-                    printf("%s\n", lado_cavalo_horizontal);
-                }
+            case 1:
                 
-            } else if (strcmp(lado_cavalo_vertical, "Baixo") == 0)
-            {
-                while (movimento_completo--)
-                {
-                    for (int i = 0; i < 2; i++)
-                    {
-                       printf("%s\n", lado_cavalo_vertical);
-                    }
-                    
-                    printf("%s\n", lado_cavalo_horizontal);
-                }
-                
-            } else
-            {
-                printf("Lado Errado\n");
-            }
-            
-            
-            
-            
-            break;
+                printf("\n\n*** MOVER TORRE ***\n");
 
-        case 5: // Sair
+                printf("Você vai escolher: Nº de Casas, O tipo de movimento (Vertical ou Horizontal) e o Lado!\n");
+
+                int casas_torre = validarCasas();
+                int movimento_torre = escolherMovimentoReto();
+                int lado_torre;
+
+                if (movimento_torre == 1)
+                {
+                    lado_torre = validarVertical();
+                } else
+                {
+                    lado_torre = validarHorizontal();
+                }
+
+                printf("\nMovendo a Torre...\n");
+                moverTorre(casas_torre, lado_torre);            
+                
+                break;
+            case 2:
+                printf("\n\n*** MOVER BISPO ***\n");
+
+                printf("Você vai escolher: Nº de Casas, Direção Vertical e a Direção Horizontal!\n");
+
+                int casas_bispo = validarCasas();
+                int lado_v = validarVertical();
+                int lado_h = validarHorizontal();
+
+                printf("\nMovendo o Bispo...\n");
+                moverBispo(casas_bispo, lado_v, lado_h);
+                break;
+            case 3:
+                printf("\n\n*** MOVER RAINHA ***\n");
+
+                printf("Você vai escolher: \n");
+                printf("Tipo de Movimento (Vertical, Horizontal ou Diagonal) \n");
+                printf("Nº de Casas, Direção Vertical e a Direção Horizontal!");
+                
+                int movimento_rainha = escolherMovimentoRainha();
+                int casas_rainha = validarCasas();
+                
+
+                if (movimento_rainha == 1 || movimento_rainha == 2)
+                {
+                    
+                    int lado_rainha;
+
+                    if (movimento_rainha == 1)
+                    {
+                        lado_rainha = validarVertical();
+                    } else
+                    {
+                        lado_rainha = validarHorizontal();
+                    }
+
+                    printf("\nMovendo a Rainha...\n");
+                    moverRainhaReto(casas_rainha, lado_rainha);             
+                                            
+                } else
+                {
+                    int lado_vRainha = validarVertical();
+                    int lado_hRainha = validarHorizontal();
+
+                    printf("\nMovendo a Rainha...\n");
+                    moverRainhaDiagonal(casas_rainha, lado_vRainha, lado_hRainha);
+                }               
+                
+                break;
+            case 4:
+
+                printf("\n\n*** MOVER CAVALO ***\n");
+
+                printf("Você vai escolher: \n");
+                printf("Tipo de Movimento (Vertical ou Horizontal) \n");
+                printf("Nº de Casas, Direção Vertical e a Direção Horizontal!");
+
+                int movimento_cavalo = escolherMovimentoReto();
+                int lado_cavaloV = validarVertical();
+                int lado_cavaloH = validarHorizontal();
+
+                printf("\nMovendo o Cavalo...\n");
+                moverCavalo(movimento_cavalo, lado_cavaloV, lado_cavaloH); // Criar variaveis e fazer funções
+                break;
+            
+            }
+
+            break;
+        case 2:
             printf("\nSaindo do Jogo de Xadrez, volte sempre!\n");
-            break;
-        } 
-        
-
-    } while (mover_peca != 5);
-    
-    
-
-
-
+            break;        
+        }
+    } while (opcao != 2);   
 
     return 0;
 }
+                
+       
+
+    
+
